@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cofre — Horas Extras</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; background: #f1f5f9; color: #1e293b; margin: 0; padding: 12px; }
+  .box { max-width: 900px; margin: 0 auto 12px auto; background: #fff; padding: 14px; border-radius: 8px; border: 1px solid #cbd5e1; }
+  .edit-mode { border: 2px solid #d97706; background: #fffbeb; }
+  .top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  h1 { margin: 0; font-size: 1.25rem; color: #0f172a; }
+  h2 { margin: 0 0 10px 0; font-size: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+  .resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }
+  .card-stat { padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; }
+  .card-saldo { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  label { display: block; font-size: 11.5px; font-weight: bold; margin-bottom: 3px; }
+  input, select, textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+  .btn { padding: 8px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; color: #fff; display: inline-flex; align-items: center; gap: 4px; }
+  .b-green { background: #15803d; } .b-red { background: #dc2626; } .b-blue { background: #1d4ed8; }
+  .b-word { background: #2b579a; } .b-pdf { background: #b91c1c; } .b-edit { background: #d97706; }
+  .b-gray { background: #475569; } .b-dark { background: #0f172a; }
+  .b-light { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; }
+  .item { border-bottom: 1px solid #e2e8f0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .item:last-child { border-bottom: none; }
+  .acts { display: flex; gap: 4px; flex-wrap: wrap; }
+  .obs { background: #f8fafc; border-left: 3px solid #475569; padding: 5px 8px; margin-top: 5px; font-size: 12.5px; }
+  #modalPdf { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; z-index: 9999; overflow: auto; }
+  .pdf-bar { position: sticky; top: 0; background: #0f172a; color: #fff; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; z-index: 10; }
+  #folhaA4 { width: 760px; box-sizing: border-box; margin: 16px auto; background: #fff; padding: 24px 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-family: Calibri, Arial, sans-serif; color: #1e293b; font-size: 10pt; }
+  @media screen and (max-width: 760px) {
+    #folhaA4 { zoom: 0.44; margin: 12px auto !important; }
+  }
+  @media print {
+    body * { visibility: hidden; }
+    #folhaA4, #folhaA4 * { visibility: visible; }
+    #folhaA4 { position: absolute; left: 0; top: 0; width: 100%; zoom: 1 !important; margin: 0; padding: 0; box-shadow: none; }
+    .pdf-bar { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="appPrincipal">
+  <div class="box">
+    <div class="top">
+      <h1>🔐 Cofre — Horas Extras</h1>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button type="button" class="btn b-pdf" onclick="abrirDoc(true)">📕 Extrato PDF</button>
+        <button type="button" class="btn b-word" onclick="abrirDoc(false)">📘 Extrato Word</button>
+        <button type="button" class="btn b-gray" onclick="copiarResumo()">📋 Copiar</button>
+        <button type="button" class="btn b-dark" onclick="exportar()">💾 Guardar Cópia</button>
+        <button type="button" class="btn b-light" onclick="document.getElementById('fImp').click()">📂 Restaurar</button>
+        <button type="button" class="btn b-light" onclick="colarTxt()">📋 Colar Cópia</button>
+        <input type="file" id="fImp" style="display:none" onchange="lerFicheiro(event)">
+      </div>
+    </div>
+    <div class="resumo">
+      <div class="card-stat card-saldo"><small style="color:#cbd5e1;">SALDO ATUAL NO COFRE</small><div id="tSaldo" style="font-size:1.35rem;font-weight:bold;color:#fbbf24;margin-top:2px;">0,00 €</div></div>
+      <div class="card-stat"><small style="color:#64748b;">TOTAL ENTRADAS (HORAS EXTRAS)</small><div id="tEntradas" style="font-size:1.15rem;font-weight:bold;color:#15803d;margin-top:2px;">0,00 €</div></div>
+      <div class="card-stat"><small style="color:#64748b;">TOTAL GASTO / RETIRADO</small><div id="tSaidas" style="font-size:1.15rem;font-weight:bold;color:#dc2626;margin-top:2px;">0,00 €</div></div>
+    </div>
+    <div id="stMsg" style="font-size:11.5px;color:#15803d;margin-top:6px;font-weight:bold;">✔ Ativo</div>
+  </div>
+  <div class="box" id="fBox">
+    <h2 id="fTit">➕ Registar Movimento no Cofre</h2>
+    <div class="grid">
+      <div>
+        <label>Tipo de Movimento *</label>
+        <select id="fTipo" onchange="mudarCorTipo()">
+          <option value="entrada">💰 Guardar no Cofre (Horas Extras)</option>
+          <option value="saida">💸 Gastar / Retirar do Cofre</option>
+        </select>
+      </div>
+      <div><label>Valor (€) *</label><input type="text" id="fVal" placeholder="Ex: 85,00"></div>
+      <div><label>Descrição / Motivo *</label><input type="text" id="fDesc" placeholder="Ex: Horas extras sábado / Jantar"></div>
+      <div><label>Data</label><input type="date" id="fData"></div>
+      <div><label>Horas (Opcional)</label><input type="text" id="fHoras" placeholder="Ex: 8h"></div>
+    </div>
+    <div style="margin-top:8px;"><label>Observações (Opcional)</label><textarea id="fObs" rows="2"></textarea></div>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button type="button" class="btn b-green" style="flex:1;justify-content:center;padding:10px;font-size:14px;" id="bSub" onclick="salvar()">💰 Guardar no Cofre</button>
+      <button type="button" class="btn b-gray" style="display:none;" id="bCan" onclick="limpar()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin:0;border:none;">📋 Histórico do Cofre</h2>
+      <select id="fFiltro" style="width:auto;padding:5px 8px;font-size:12.5px;" onchange="render()">
+        <option value="todos">Todos os movimentos</option>
+        <option value="entrada">Só Entradas (+)</option>
+        <option value="saida">Só Gastos (-)</option>
+      </select>
+    </div>
+    <div id="lista">Sem movimentos registados.</div>
+  </div>
+</div>
+
+<div id="modalPdf">
+  <div class="pdf-bar">
+    <button type="button" class="btn b-gray" style="padding:8px 12px;font-size:13px;" onclick="fecharPdf()">⬅ Voltar</button>
+    <div style="display:flex;gap:6px;">
+      <button type="button" class="btn b-blue" style="padding:8px 12px;font-size:13px;" onclick="partilharPdfReal()">📤 Guardar / Enviar PDF</button>
+      <button type="button" class="btn b-pdf" style="padding:8px 12px;font-size:13px;" id="btnImpCofre" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
+  <div id="folhaA4"></div>
+</div>
+
+<script>
+var KEY = 'app_cofre_horas_extras_bruno_v1';
+var movs = new Array();
+var editId = null;
+
+function hoje() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function fmtData(s) {
+  if (!s) return hoje();
+  var p = String(s).split('-');
+  if (p.length === 3) { var dia = p.pop(), mes = p.pop(), ano = p.pop(); return dia + '/' + mes + '/' + ano; }
+  return s;
+}
+function paraISO(s) {
+  if (!s || s.indexOf('/') === -1) return hoje();
+  var p = String(s).split('/');
+  if (p.length === 3) { var ano = p.pop(), mes = p.pop(), dia = p.pop(); return ano + '-' + mes + '-' + dia; }
+  return hoje();
+}
+function eur(v) { return Number(v).toFixed(2).replace('.', ',') + ' €'; }
+
+function mudarCorTipo() {
+  if (editId !== null) return;
+  var t = document.getElementById('fTipo').value;
+  var b = document.getElementById('bSub');
+  if (t === 'entrada') {
+    b.innerText = '💰 Guardar no Cofre';
+    b.className = 'btn b-green';
+  } else {
+    b.innerText = '💸 Registar Gasto do Cofre';
+    b.className = 'btn b-red';
+  }
+}
+
+function iniciar() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var obj = JSON.parse(raw);
+      movs = obj.movimentos || new Array();
+    }
+  } catch (e) {}
+  document.getElementById('fData').value = hoje();
+  render();
+}
+function gravar() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ movimentos: movs }));
+    document.getElementById('stMsg').innerText = '✔ Guardado';
+  } catch (e) {}
+}
+
+function exportar() {
+  gravar();
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(new Array(JSON.stringify({ movimentos: movs }, null, 2)), { type: 'application/json' }));
+  a.download = 'Backup_Cofre_' + hoje() + '.json';
+  a.click();
+}
+
+function lerFicheiro(ev) {
+  var f = ev.target.files && ev.target.files.length ? ev.target.files.item(0) : null;
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function(e) { restaurarTxt(e.target.result); ev.target.value = ''; };
+  r.readAsText(f);
+}
+
+function colarTxt() { var t = prompt('Cola o texto do Backup (.json):'); if (t) restaurarTxt(t); }
+function restaurarTxt(t) {
+  try {
+    var obj = JSON.parse(t.trim());
+    if (obj && Array.isArray(obj.movimentos)) {
+      movs = obj.movimentos;
+      gravar(); render();
+      alert('✔ ' + movs.length + ' movimentos restaurados!');
+    }
+  } catch (e) { alert('Texto inválido.'); }
+}
+
+function limpar() {
+  editId = null;
+  document.getElementById('fTipo').value = 'entrada';
+  document.getElementById('fVal').value = '';
+  document.getElementById('fDesc').value = '';
+  document.getElementById('fData').value = hoje();
+  document.getElementById('fHoras').value = '';
+  document.getElementById('fObs').value = '';
+  document.getElementById('fBox').classList.remove('edit-mode');
+  document.getElementById('fTit').innerText = '➕ Registar Movimento no Cofre';
+  document.getElementById('bCan').style.display = 'none';
+  mudarCorTipo();
+}
+
+function salvar() {
+  var tipo = document.getElementById('fTipo').value;
+  var val = parseFloat(document.getElementById('fVal').value.replace(',', '.'));
+  var desc = document.getElementById('fDesc').value.trim() || (tipo === 'entrada' ? 'Horas Extras' : 'Gasto do Cofre');
+  var dt = fmtData(document.getElementById('fData').value || hoje());
+  var horas = document.getElementById('fHoras').value.trim();
+  var obs = document.getElementById('fObs').value.trim();
+
+  if (isNaN(val) || val <= 0) return alert('Insere um valor válido!');
+
+  if (editId !== null) {
+    movs.forEach(function(m) {
+      if (m.id === editId) {
+        m.tipo = tipo; m.valor = val; m.desc = desc; m.data = dt; m.horas = horas; m.obs = obs;
+      }
+    });
+  } else {
+    movs.unshift({ id: Date.now(), tipo: tipo, valor: val, desc: desc, data: dt, horas: horas, obs: obs });
+  }
+  limpar(); gravar(); render();
+}
+
+function apagar(id) {
+  if (confirm('Apagar este movimento do cofre?')) {
+    movs = movs.filter(function(m) { return m.id !== id; });
+    gravar(); render();
+  }
+}
+
+function editar(id) {
+  var m = movs.filter(function(x) { return x.id === id; }).pop();
+  if (!m) return;
+  editId = id;
+  document.getElementById('fTipo').value = m.tipo;
+  document.getElementById('fVal').value = Number(m.valor).toFixed(2).replace('.', ',');
+  document.getElementById('fDesc').value = m.desc;
+  document.getElementById('fData').value = paraISO(m.data);
+  document.getElementById('fHoras').value = m.horas || '';
+  document.getElementById('fObs').value = m.obs || '';
+  document.getElementById('fBox').classList.add('edit-mode');
+  document.getElementById('fTit').innerText = '✏️ A Editar Movimento';
+  document.getElementById('bSub').innerText = '💾 Guardar Alterações';
+  document.getElementById('bSub').className = 'btn b-edit';
+  document.getElementById('bCan').style.display = 'inline-block';
+  window.scrollTo(0, 0);
+}
+
+function render() {
+  var ent = 0, sai = 0, h = '';
+  var filtro = document.getElementById('fFiltro').value;
+
+  movs.forEach(function(m) {
+    if (m.tipo === 'entrada') ent += Number(m.valor);
+    else sai += Number(m.valor);
+
+    if (filtro !== 'todos' && m.tipo !== filtro) return;
+
+    var isEnt = m.tipo === 'entrada';
+    var cor = isEnt ? '#15803d' : '#dc2626';
+    var sinal = isEnt ? '+' : '-';
+    var badge = isEnt ? '💰 ENTRADA' : '💸 GASTO';
+
+    h += '<div class="item"><div>' +
+      '<span style="font-size:11px;font-weight:bold;color:' + cor + ';background:' + (isEnt ? '#dcfce7' : '#fee2e2') + ';padding:2px 6px;border-radius:4px;margin-right:6px;">' + badge + '</span>' +
+      '<b>' + m.desc + '</b> — <span style="font-weight:bold;color:' + cor + ';">' + sinal + ' ' + eur(m.valor) + '</span>' +
+      (m.horas ? ' <small style="color:#1d4ed8;font-weight:bold;">(' + m.horas + ')</small>' : '') +
+      '<br><small style="color:#64748b;">Data: ' + m.data + '</small>' +
+      (m.obs ? '<div class="obs"><b>Obs.:</b> ' + m.obs + '</div>' : '') +
+      '</div><div class="acts">' +
+      '<button type="button" class="btn b-edit" onclick="editar(' + m.id + ')">✏️ Editar</button>' +
+      '<button type="button" class="btn b-pdf" onclick="apagar(' + m.id + ')">🗑</button>' +
+      '</div></div>';
+  });
+
+  var saldo = +(ent - sai).toFixed(2);
+  var elSaldo = document.getElementById('tSaldo');
+  elSaldo.innerText = eur(saldo);
+  elSaldo.style.color = saldo < 0 ? '#f87171' : '#fbbf24';
+  document.getElementById('tEntradas').innerText = eur(ent);
+  document.getElementById('tSaidas').innerText = eur(sai);
+  document.getElementById('lista').innerHTML = h || 'Sem movimentos registados.';
+}
+function copiarResumo() {
+  var ent = 0, sai = 0;
+  movs.forEach(function(m) {
+    if (m.tipo === 'entrada') ent += Number(m.valor);
+    else sai += Number(m.valor);
+  });
+  var saldo = +(ent - sai).toFixed(2);
+  var txt = '🔐 RESUMO DO COFRE — HORAS EXTRAS\n----------------\n' +
+    '💰 Total Guardado: ' + eur(ent) + '\n' +
+    '💸 Total Gasto: ' + eur(sai) + '\n' +
+    '✅ SALDO NO COFRE: ' + eur(saldo) + '\n----------------\nÚltimos movimentos:\n';
+  movs.slice(0, 6).forEach(function(m) {
+    txt += (m.tipo === 'entrada' ? '[+] ' : '[-] ') + m.data + ' - ' + m.desc + ': ' + eur(m.valor) + '\n';
+  });
+  var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  alert('Resumo do cofre copiado!');
+}
+
+function fecharPdf() {
+  document.getElementById('modalPdf').style.display = 'none';
+  document.getElementById('appPrincipal').style.display = 'block';
+}
+
+function abrirDoc(isPdf) {
+  if (!movs.length) return alert('Sem movimentos registados.');
+  var ent = 0, sai = 0, rows = '';
+  movs.forEach(function(m, i) {
+    var isEnt = m.tipo === 'entrada';
+    if (isEnt) ent += Number(m.valor); else sai += Number(m.valor);
+    rows += '<tr>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;">' + (i + 1) + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;white-space:nowrap;">' + m.data + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;font-weight:bold;color:' + (isEnt ? '#15803d' : '#dc2626') + ';">' + (isEnt ? 'ENTRADA' : 'GASTO') + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;"><b>' + m.desc + '</b>' + (m.horas ? ' (' + m.horas + ')' : '') + (m.obs ? '<br><small>Obs.: ' + m.obs + '</small>' : '') + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:right;white-space:nowrap;font-weight:bold;color:' + (isEnt ? '#15803d' : '#dc2626') + ';">' + (isEnt ? '+ ' : '- ') + eur(m.valor) + '</td>' +
+    '</tr>';
+  });
+  var saldo = +(ent - sai).toFixed(2);
+  var dtHoje = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+  var corpo = '<table style="width:100%;border-bottom:3px solid #0f172a;margin-bottom:16px;"><tr><td><h1 style="margin:0;font-size:18pt;">EXTRATO DO COFRE — HORAS EXTRAS</h1></td><td style="text-align:right;white-space:nowrap;"><b>Data:</b> ' + dtHoje + '<br><b>Divisa:</b> Euro (€)</td></tr></table>' +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:9.5pt;"><thead><tr style="background:#0f172a;color:#fff;"><th style="padding:7px;">#</th><th style="padding:7px;text-align:left;">Data</th><th style="padding:7px;">Tipo</th><th style="padding:7px;text-align:left;">Descrição / Horas</th><th style="padding:7px;text-align:right;">Valor</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<table style="width:100%;margin-bottom:20px;"><tr><td style="width:52%;"></td><td style="width:48%;"><table style="width:100%;border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1;padding:7px;">Total Guardado:</td><td style="border:1px solid #cbd5e1;padding:7px;text-align:right;color:#15803d;">' + eur(ent) + '</td></tr><tr><td style="border:1px solid #cbd5e1;padding:7px;">Total Gasto:</td><td style="border:1px solid #cbd5e1;padding:7px;text-align:right;color:#dc2626;">' + eur(sai) + '</td></tr><tr style="background:#0f172a;color:#fff;font-weight:bold;"><td style="border:1px solid #0f172a;padding:9px;">SALDO NO COFRE:</td><td style="border:1px solid #0f172a;padding:9px;text-align:right;">' + eur(saldo) + '</td></tr></table></td></tr></table>';
+
+  if (isPdf) {
+    document.getElementById('folhaA4').innerHTML = corpo;
+    document.getElementById('appPrincipal').style.display = 'none';
+    document.getElementById('modalPdf').style.display = 'block';
+  } else {
+    var docWord = '<html><head><meta charset="utf-8"></head><body style="font-family:Calibri,Arial;font-size:10pt;">' + corpo + '</body></html>';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(new Array('\ufeff', docWord), { type: 'application/msword' }));
+    a.download = 'Extrato_Cofre_' + hoje() + '.doc'; a.click();
+  }
+}
+
+function pdfEnc(txt) {
+  var s = String(txt || '');
+  var map = { '€': '\\200', 'á': '\\341', 'à': '\\340', 'â': '\\342', 'ã': '\\343', 'é': '\\351', 'ê': '\\352', 'í': '\\355', 'ó': '\\363', 'ô': '\\364', 'õ': '\\365', 'ú': '\\372', 'ç': '\\347', 'Á': '\\301', 'À': '\\300', 'Â': '\\302', 'Ã': '\\303', 'É': '\\311', 'Ê': '\\312', 'Í': '\\315', 'Ó': '\\323', 'Ô': '\\324', 'Õ': '\\325', 'Ú': '\\332', 'Ç': '\\307', '—': '-' };
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var ch = s.charAt(i);
+    if (ch === '(' || ch === ')' || ch === '\\') out += '\\' + ch;
+    else if (map[ch]) out += map[ch];
+    else if (s.charCodeAt(i) < 128) out += ch;
+    else out += ' ';
+  }
+  return out;
+}
+
+function partilharPdfReal() {
+  var dtHoje = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  var c = '';
+  function txt(x, y, sz, bold, str) { c += 'BT /' + (bold ? 'F2' : 'F1') + ' ' + sz + ' Tf ' + x + ' ' + y + ' Td (' + pdfEnc(str) + ') Tj ET\n'; }
+  function linha(x1, y1, x2, y2, w) { c += (w || 1) + ' w ' + x1 + ' ' + y1 + ' m ' + x2 + ' ' + y2 + ' l S\n'; }
+
+  txt(40, 790, 16, true, 'EXTRATO DO COFRE - HORAS EXTRAS');
+  txt(455, 792, 9.5, false, 'Data: ' + dtHoje);
+  linha(40, 774, 555, 774, 2);
+
+  c += '0.06 0.09 0.16 rg 40 740 515 20 re f 1 1 1 rg\n';
+  txt(48, 746, 8.5, true, '#');
+  txt(72, 746, 8.5, true, 'Data');
+  txt(135, 746, 8.5, true, 'Tipo');
+  txt(205, 746, 8.5, true, 'Descricao / Horas');
+  txt(480, 746, 8.5, true, 'Valor');
+  c += '0 0 0 rg\n';
+
+  var y = 720, ent = 0, sai = 0;
+  movs.forEach(function(m, i) {
+    var isEnt = m.tipo === 'entrada';
+    if (isEnt) ent += Number(m.valor); else sai += Number(m.valor);
+    if (y < 140) return;
+    var desc = m.desc + (m.horas ? ' (' + m.horas + ')' : '');
+    txt(48, y, 8.5, false, String(i + 1));
+    txt(72, y, 8.5, false, m.data);
+    txt(135, y, 8.5, true, isEnt ? 'ENTRADA' : 'GASTO');
+    txt(205, y, 8.5, false, desc.substring(0, 42));
+    txt(480, y, 8.5, true, (isEnt ? '+ ' : '- ') + eur(m.valor));
+    linha(40, y - 6, 555, y - 6, 0.4);
+    y -= 20;
+  });
+
+  var saldo = +(ent - sai).toFixed(2);
+  y -= 16;
+  txt(350, y, 9.5, false, 'Total Guardado: ' + eur(ent));
+  txt(350, y - 16, 9.5, false, 'Total Gasto: ' + eur(sai));
+  c += '0.06 0.09 0.16 rg 340 ' + (y - 40) + ' 215 18 re f 1 1 1 rg\n';
+  txt(350, y - 35, 10, true, 'SALDO NO COFRE: ' + eur(saldo));
+  c += '0 0 0 rg\n';
+
+  var objs = new Array();
+  objs.push('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n');
+  objs.push('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n');
+  objs.push('3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >> endobj\n');
+  objs.push('4 0 obj << /Length ' + c.length + ' >> stream\n' + c + 'endstream endobj\n');
+  objs.push('5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n');
+  objs.push('6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >> endobj\n');
+
+  var pdf = '%PDF-1.4\n';
+  var offs = new Array();
+  for (var j = 0; j < objs.length; j++) { offs.push(pdf.length); pdf += objs[j]; }
+  var xrefPos = pdf.length;
+  pdf += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+  for (var k = 0; k < offs.length; k++) { pdf += String(offs[k]).padStart(10, '0') + ' 00000 n \n'; }
+  pdf += 'trailer << /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+
+  var arr = new Uint8Array(pdf.length);
+  for (var n = 0; n < pdf.length; n++) arr[n] = pdf.charCodeAt(n) & 255;
+  var pdfBlob = new Blob(new Array(arr), { type: 'application/pdf' });
+  var nomeArq = 'Extrato_Cofre_' + hoje() + '.pdf';
+  var file = new File(new Array(pdfBlob), nomeArq, { type: 'application/pdf' });
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: new Array(file) })) {
+    navigator.share({ title: nomeArq, files: new Array(file) }).catch(function(){});
+  } else {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(pdfBlob); a.download = nomeArq; a.click();
+  }
+}
+
+var btnImp = document.getElementById('btnImpCofre');
+if (btnImp) {
+  btnImp.onclick = function() {
+    if (window.navigator.standalone) partilharPdfReal();
+    else window.print();
+  };
+}
+
+(function() {
+  try {
+    var c = document.createElement('canvas'); c.width = 512; c.height = 512; var ctx = c.getContext('2d');
+    var g = ctx.createLinearGradient(0, 0, 512, 512); g.addColorStop(0, '#064e3b'); g.addColorStop(1, '#15803d');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+    ctx.beginPath(); ctx.arc(256, 220, 115, 0, Math.PI * 2); ctx.fillStyle = '#fbbf24'; ctx.fill();
+    ctx.fillStyle = '#0f172a'; ctx.font = 'bold 135px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('€', 252, 228); ctx.fillStyle = '#fff'; ctx.font = 'bold 42px Arial'; ctx.fillText('COFRE', 256, 405);
+    var u = c.toDataURL('image/png');
+    var l1 = document.createElement('link'); l1.rel = 'apple-touch-icon'; l1.href = u; document.head.appendChild(l1);
+    var l2 = document.createElement('link'); l2.rel = 'icon'; l2.href = u; document.head.appendChild(l2);
+  } catch (e) {}
+})();
+
+iniciar();
+</script>
+</body>
+</html>

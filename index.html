@@ -316,26 +316,47 @@ function abrirDoc(isPdf) {
   movs.forEach(function(m, i) {
     var isEnt = m.tipo === 'entrada';
     if (isEnt) ent += Number(m.valor); else sai += Number(m.valor);
-    rows += '<tr>' +
-      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;">' + (i + 1) + '</td>' +
-      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;white-space:nowrap;">' + m.data + '</td>' +
-      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:center;font-weight:bold;color:' + (isEnt ? '#15803d' : '#dc2626') + ';">' + (isEnt ? 'ENTRADA' : 'GASTO') + '</td>' +
-      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;"><b>' + m.desc + '</b>' + (m.horas ? ' (' + m.horas + ')' : '') + (m.obs ? '<br><small>Obs.: ' + m.obs + '</small>' : '') + '</td>' +
-      '<td style="border-bottom:1px solid #cbd5e1;padding:7px;text-align:right;white-space:nowrap;font-weight:bold;color:' + (isEnt ? '#15803d' : '#dc2626') + ';">' + (isEnt ? '+ ' : '- ') + eur(m.valor) + '</td>' +
+    var bgLinha = (i % 2 === 1) ? 'background:#f8fafc;' : '';
+    rows += '<tr style="' + bgLinha + '">' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:10px 8px;text-align:center;">' + (i + 1) + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:10px 8px;white-space:nowrap;">' + m.data + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:10px 8px;text-align:center;font-weight:bold;color:' + (isEnt ? '#15803d' : '#dc2626') + ';">' + (isEnt ? 'ENTRADA' : 'GASTO') + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:10px 8px;"><b>' + m.desc + '</b>' + (m.horas ? ' <span style="color:#1d4ed8;">(' + m.horas + ')</span>' : '') + (m.obs ? '<br><small style="color:#475569;">Obs.: ' + m.obs + '</small>' : '') + '</td>' +
+      '<td style="border-bottom:1px solid #cbd5e1;padding:10px 8px;text-align:right;white-space:nowrap;font-weight:bold;color:' + (isEnt ? '#15803d' : '#dc2626') + ';">' + (isEnt ? '+ ' : '- ') + eur(m.valor) + '</td>' +
     '</tr>';
   });
+
   var saldo = +(ent - sai).toFixed(2);
   var dtHoje = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
-  var corpo = '<table style="width:100%;border-bottom:3px solid #0f172a;margin-bottom:16px;"><tr><td><h1 style="margin:0;font-size:18pt;">EXTRATO DO COFRE — HORAS EXTRAS</h1></td><td style="text-align:right;white-space:nowrap;"><b>Data:</b> ' + dtHoje + '<br><b>Divisa:</b> Euro (€)</td></tr></table>' +
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:9.5pt;"><thead><tr style="background:#0f172a;color:#fff;"><th style="padding:7px;">#</th><th style="padding:7px;text-align:left;">Data</th><th style="padding:7px;">Tipo</th><th style="padding:7px;text-align:left;">Descrição / Horas</th><th style="padding:7px;text-align:right;">Valor</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<table style="width:100%;margin-bottom:20px;"><tr><td style="width:52%;"></td><td style="width:48%;"><table style="width:100%;border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1;padding:7px;">Total Guardado:</td><td style="border:1px solid #cbd5e1;padding:7px;text-align:right;color:#15803d;">' + eur(ent) + '</td></tr><tr><td style="border:1px solid #cbd5e1;padding:7px;">Total Gasto:</td><td style="border:1px solid #cbd5e1;padding:7px;text-align:right;color:#dc2626;">' + eur(sai) + '</td></tr><tr style="background:#0f172a;color:#fff;font-weight:bold;"><td style="border:1px solid #0f172a;padding:9px;">SALDO NO COFRE:</td><td style="border:1px solid #0f172a;padding:9px;text-align:right;">' + eur(saldo) + '</td></tr></table></td></tr></table>';
+   var corpo =
+    '<div style="border-bottom:3px solid #0f172a;padding-bottom:10px;margin-bottom:22px;">' +
+      '<h1 style="margin:0 0 8px 0;font-size:17pt;color:#0f172a;white-space:nowrap;">EXTRATO DO COFRE — HORAS EXTRAS</h1>' +
+      '<table style="width:100%;font-size:9.5pt;color:#334155;"><tr>' +
+        '<td>Titular: <b>BRUNO MONTEIRO</b></td>' +
+        '<td style="text-align:right;"><b>Data de emissão:</b> ' + dtHoje + ' &nbsp;|&nbsp; <b>Divisa:</b> Euro (€)</td>' +
+      '</tr></table>' +
+    '</div>' +
+
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:9.5pt;">' +
+      '<thead><tr style="background:#0f172a;color:#fff;"><th style="padding:10px 8px;width:36px;">#</th><th style="padding:10px 8px;text-align:left;width:95px;">Data</th><th style="padding:10px 8px;width:90px;">Tipo</th><th style="padding:10px 8px;text-align:left;">Descrição / Horas</th><th style="padding:10px 8px;text-align:right;width:110px;">Valor</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>' +
+    '<table style="width:100%;margin-top:10px;"><tr>' +
+      '<td style="width:50%;vertical-align:top;"><div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #15803d;padding:12px;font-size:9pt;color:#334155;"><b>Resumo de Movimentos:</b><br>Total de registos no extrato: <b>' + movs.length + '</b></div></td>' +
+      '<td style="width:4%;"></td>' +
+      '<td style="width:46%;vertical-align:top;"><table style="width:100%;border-collapse:collapse;font-size:10pt;">' +
+        '<tr><td style="border:1px solid #cbd5e1;padding:9px 10px;">Total Guardado:</td><td style="border:1px solid #cbd5e1;padding:9px 10px;text-align:right;font-weight:bold;color:#15803d;">' + eur(ent) + '</td></tr>' +
+        '<tr><td style="border:1px solid #cbd5e1;padding:9px 10px;">Total Gasto:</td><td style="border:1px solid #cbd5e1;padding:9px 10px;text-align:right;font-weight:bold;color:#dc2626;">' + eur(sai) + '</td></tr>' +
+        '<tr style="background:#0f172a;color:#fff;font-weight:bold;"><td style="border:1px solid #0f172a;padding:11px 10px;">SALDO NO COFRE:</td><td style="border:1px solid #0f172a;padding:11px 10px;text-align:right;font-size:11pt;color:#fbbf24;">' + eur(saldo) + '</td></tr>' +
+      '</table></td>' +
+    '</tr></table>';
 
   if (isPdf) {
     document.getElementById('folhaA4').innerHTML = corpo;
     document.getElementById('appPrincipal').style.display = 'none';
     document.getElementById('modalPdf').style.display = 'block';
   } else {
-    var docWord = '<html><head><meta charset="utf-8"></head><body style="font-family:Calibri,Arial;font-size:10pt;">' + corpo + '</body></html>';
+    var docWord = '<html><head><meta charset="utf-8"><style>@page{size:21cm 29.7cm;margin:1.8cm;}</style></head><body style="font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#1e293b;">' + corpo + '</body></html>';
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(new Array('\ufeff', docWord), { type: 'application/msword' }));
     a.download = 'Extrato_Cofre_' + hoje() + '.doc'; a.click();
@@ -361,20 +382,26 @@ function partilharPdfReal() {
   var c = '';
   function txt(x, y, sz, bold, str) { c += 'BT /' + (bold ? 'F2' : 'F1') + ' ' + sz + ' Tf ' + x + ' ' + y + ' Td (' + pdfEnc(str) + ') Tj ET\n'; }
   function linha(x1, y1, x2, y2, w) { c += (w || 1) + ' w ' + x1 + ' ' + y1 + ' m ' + x2 + ' ' + y2 + ' l S\n'; }
+  function caixa(x, y, w, h, fill) {
+    if (fill) c += '0.96 0.97 0.98 rg ' + x + ' ' + y + ' ' + w + ' ' + h + ' re f 0 0 0 rg\n';
+    c += '0.78 0.81 0.85 RG 0.8 w ' + x + ' ' + y + ' ' + w + ' ' + h + ' re S 0 0 0 RG\n';
+  }
 
-  txt(40, 790, 16, true, 'EXTRATO DO COFRE - HORAS EXTRAS');
-  txt(455, 792, 9.5, false, 'Data: ' + dtHoje);
-  linha(40, 774, 555, 774, 2);
+  txt(40, 790, 15.5, true, 'EXTRATO DO COFRE - HORAS EXTRAS');
+  txt(40, 775, 9, false, 'Titular: BRUNO MONTEIRO');
+  txt(445, 790, 9, false, 'Data: ' + dtHoje);
+  txt(445, 776, 9, false, 'Divisa: Euro (€)');
+  linha(40, 764, 555, 764, 2);
 
-  c += '0.06 0.09 0.16 rg 40 740 515 20 re f 1 1 1 rg\n';
-  txt(48, 746, 8.5, true, '#');
-  txt(72, 746, 8.5, true, 'Data');
-  txt(135, 746, 8.5, true, 'Tipo');
-  txt(205, 746, 8.5, true, 'Descricao / Horas');
-  txt(480, 746, 8.5, true, 'Valor');
+  c += '0.06 0.09 0.16 rg 40 726 515 22 re f 1 1 1 rg\n';
+  txt(48, 733, 8.5, true, '#');
+  txt(72, 733, 8.5, true, 'Data');
+  txt(140, 733, 8.5, true, 'Tipo');
+  txt(210, 733, 8.5, true, 'Descricao / Horas');
+  txt(480, 733, 8.5, true, 'Valor');
   c += '0 0 0 rg\n';
 
-  var y = 720, ent = 0, sai = 0;
+  var y = 704, ent = 0, sai = 0;
   movs.forEach(function(m, i) {
     var isEnt = m.tipo === 'entrada';
     if (isEnt) ent += Number(m.valor); else sai += Number(m.valor);
@@ -382,19 +409,27 @@ function partilharPdfReal() {
     var desc = m.desc + (m.horas ? ' (' + m.horas + ')' : '');
     txt(48, y, 8.5, false, String(i + 1));
     txt(72, y, 8.5, false, m.data);
-    txt(135, y, 8.5, true, isEnt ? 'ENTRADA' : 'GASTO');
-    txt(205, y, 8.5, false, desc.substring(0, 42));
+    txt(140, y, 8.5, true, isEnt ? 'ENTRADA' : 'GASTO');
+    txt(210, y, 8.5, false, desc.substring(0, 42));
     txt(480, y, 8.5, true, (isEnt ? '+ ' : '- ') + eur(m.valor));
-    linha(40, y - 6, 555, y - 6, 0.4);
-    y -= 20;
+    linha(40, y - 7, 555, y - 7, 0.4);
+    y -= 22;
   });
 
   var saldo = +(ent - sai).toFixed(2);
-  y -= 16;
-  txt(350, y, 9.5, false, 'Total Guardado: ' + eur(ent));
-  txt(350, y - 16, 9.5, false, 'Total Gasto: ' + eur(sai));
-  c += '0.06 0.09 0.16 rg 340 ' + (y - 40) + ' 215 18 re f 1 1 1 rg\n';
-  txt(350, y - 35, 10, true, 'SALDO NO COFRE: ' + eur(saldo));
+  y -= 18;
+  caixa(40, y - 48, 250, 52, true);
+  txt(50, y - 16, 9, true, 'Resumo de Movimentos:');
+  txt(50, y - 32, 8.5, false, 'Total de registos no extrato: ' + movs.length);
+
+  caixa(320, y - 48, 235, 52, false);
+  txt(330, y - 14, 9, false, 'Total Guardado:');
+  txt(475, y - 14, 9, true, eur(ent));
+  txt(330, y - 28, 9, false, 'Total Gasto:');
+  txt(475, y - 28, 9, true, eur(sai));
+  c += '0.06 0.09 0.16 rg 320 ' + (y - 48) + ' 235 17 re f 1 1 1 rg\n';
+  txt(330, y - 44, 9.5, true, 'SALDO NO COFRE:');
+  txt(475, y - 44, 9.5, true, eur(saldo));
   c += '0 0 0 rg\n';
 
   var objs = new Array();
@@ -418,7 +453,6 @@ function partilharPdfReal() {
   var pdfBlob = new Blob(new Array(arr), { type: 'application/pdf' });
   var nomeArq = 'Extrato_Cofre_' + hoje() + '.pdf';
   var file = new File(new Array(pdfBlob), nomeArq, { type: 'application/pdf' });
-
   if (navigator.share && navigator.canShare && navigator.canShare({ files: new Array(file) })) {
     navigator.share({ title: nomeArq, files: new Array(file) }).catch(function(){});
   } else {
@@ -452,3 +486,5 @@ iniciar();
 </script>
 </body>
 </html>
+
+
